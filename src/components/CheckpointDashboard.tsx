@@ -38,6 +38,7 @@ const FAMILY_COLORS: Record<Family, string> = {
   plug: '#34d399',
 }
 
+const BASE_COLOR = '#ef4444'
 const TASKS: TaskKey[] = ['ChemHotpotQARetrieval', 'ChemNQRetrieval', 'ChemRxivRetrieval']
 
 function metricOptions(baseModel: BaseModel): MetricOption[] {
@@ -71,7 +72,7 @@ function buildSeries(runs: Run[]): Series[] {
         lr: run.lr,
         label: `${FAMILY_LABELS[run.family]} · ${run.lr}`,
         color: FAMILY_COLORS[run.family],
-        dash: run.lr === '1e-5' ? '6 4' : undefined,
+        dash: run.lr === '1e-5' ? '10 6' : undefined,
         runs: [],
       })
     }
@@ -109,6 +110,15 @@ function KpiCard({ label, value, note }: { label: string; value: string; note?: 
   )
 }
 
+function SeriesSwatch({ color, dash, dot, showLine = true }: { color: string; dash?: string; dot?: boolean; showLine?: boolean }) {
+  return (
+    <svg width="28" height="12" viewBox="0 0 28 12" className="shrink-0 overflow-visible">
+      {showLine ? <line x1="2" y1="6" x2="26" y2="6" stroke={color} strokeWidth="2.5" strokeDasharray={dash} strokeLinecap="round" /> : null}
+      {dot ? <circle cx="14" cy="6" r="3.5" fill={color} stroke="#0a0a0a" strokeWidth="1.2" /> : null}
+    </svg>
+  )
+}
+
 function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: BaseModel; series: Series[]; metric: string; visible: Set<string> }) {
   const margin = { top: 20, right: 24, bottom: 48, left: 56 }
   const width = 760
@@ -132,10 +142,18 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
 
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/80 p-4">
-      <div className="mb-2 flex items-center justify-between">
+      <div className="mb-4 space-y-3">
         <div>
-          <h2 className="text-lg font-semibold text-white">Tradeoff view</h2>
-          <p className="text-sm text-neutral-400">x = average of ChemHotpotQA and ChemNQ, y = ChemRxiv. Points are checkpoints, connected by epoch.</p>
+          <h2 className="text-lg font-semibold text-white">General vs ChemRxiv balance</h2>
+          <p className="text-sm text-neutral-400">
+            This is just a 2D summary of two goals at once: general retrieval performance on the x-axis, and ChemRxiv performance on the y-axis.
+          </p>
+        </div>
+        <div className="grid gap-2 text-sm text-neutral-300 md:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2">Right = better average on ChemHotpotQA + ChemNQ</div>
+          <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2">Up = better on ChemRxiv</div>
+          <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2">Upper-right = better on both</div>
+          <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2">Up + left = ChemRxiv improved, but the general tasks got worse</div>
         </div>
       </div>
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible">
@@ -190,7 +208,7 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
             cx={scale(basePoint.x, xMin, xMax, margin.left, margin.left + plotW)}
             cy={scale(basePoint.y, yMin, yMax, margin.top + plotH, margin.top)}
             r={7}
-            fill="#ffffff"
+            fill={BASE_COLOR}
             stroke="#0a0a0a"
             strokeWidth={2}
           >
@@ -199,7 +217,7 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
           <text
             x={scale(basePoint.x, xMin, xMax, margin.left, margin.left + plotW) + 10}
             y={scale(basePoint.y, yMin, yMax, margin.top + plotH, margin.top) + 4}
-            className="fill-white text-[11px]"
+            className="fill-red-400 text-[11px]"
           >
             Base
           </text>
@@ -276,7 +294,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
         })}
 
         <g>
-          <circle cx={scale(0, 0, 5, margin.left, margin.left + plotW)} cy={scale(base, yMin, yMax, margin.top + plotH, margin.top)} r={6} fill="#ffffff" stroke="#0a0a0a" strokeWidth={2}>
+          <circle cx={scale(0, 0, 5, margin.left, margin.left + plotW)} cy={scale(base, yMin, yMax, margin.top + plotH, margin.top)} r={6} fill={BASE_COLOR} stroke="#0a0a0a" strokeWidth={2}>
             <title>{`Base model\n${TASK_LABELS[task]}: ${base.toFixed(3)}`}</title>
           </circle>
         </g>
@@ -342,6 +360,25 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
             </div>
 
             <div className="mt-6">
+              <div className="text-xs uppercase tracking-[0.14em] text-neutral-400">Reading guide</div>
+              <div className="mt-3 space-y-2 rounded-xl border border-neutral-800 bg-neutral-950/60 p-3 text-sm text-neutral-300">
+                <div className="flex items-center gap-2">
+                  <SeriesSwatch color={BASE_COLOR} dot showLine={false} />
+                  <span>Base model reference</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <SeriesSwatch color="#d4d4d8" />
+                  <span>Solid line = lr 1e-6</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <SeriesSwatch color="#d4d4d8" dash="10 6" />
+                  <span>Dashed line = lr 1e-5</span>
+                </div>
+                <div className="text-xs text-neutral-500">Color still shows model family: blue = vanilla, amber = full, green = plug.</div>
+              </div>
+            </div>
+
+            <div className="mt-6">
               <div className="text-xs uppercase tracking-[0.14em] text-neutral-400">Series</div>
               <div className="mt-3 space-y-2">
                 {series.map((s) => {
@@ -358,8 +395,11 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
                       className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm ${active ? 'border-neutral-600 bg-neutral-950 text-white' : 'border-neutral-800 bg-neutral-950/40 text-neutral-500'}`}
                     >
                       <span className="flex items-center gap-2">
-                        <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                        {s.label}
+                        <SeriesSwatch color={s.color} dash={s.dash} />
+                        <span className="flex flex-col items-start">
+                          <span>{s.label}</span>
+                          <span className="text-xs text-neutral-500">{s.dash ? 'dashed' : 'solid'} line</span>
+                        </span>
                       </span>
                       <span className="text-xs">{active ? 'on' : 'off'}</span>
                     </button>
