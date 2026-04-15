@@ -1,5 +1,8 @@
 import CheckpointDashboard from '@/components/CheckpointDashboard'
+import { loadCheckpointData } from '@/lib/checkpointData'
 
-export default function HomePage() {
-  return <CheckpointDashboard />
+export default async function HomePage() {
+  const { baseModel, runs } = await loadCheckpointData()
+
+  return <CheckpointDashboard baseModel={baseModel} runs={runs} />
 }

@@ -1,0 +1,93 @@
+{
+    "loader_kwargs": {
+        "trust_remote_code": true,
+        "model_prompts": {
+            "Classification": "classification: ",
+            "MultilabelClassification": "classification: ",
+            "Clustering": "clustering: ",
+            "PairClassification": "classification: ",
+            "Reranking": "classification: ",
+            "STS": "classification: ",
+            "Summarization": "classification: ",
+            "query": "search_query: ",
+            "document": "search_document: "
+        },
+        "device": "cuda"
+    },
+    "name": "nomic-ai/nomic-embed-text-v1",
+    "revision": "0759316f275aa0cb93a5b830973843ca66babcf5",
+    "release_date": "2024-01-31",
+    "languages": [
+        "eng-Latn"
+    ],
+    "n_parameters": 136731648,
+    "n_active_parameters_override": null,
+    "n_embedding_parameters": null,
+    "memory_usage_mb": 522.0,
+    "max_tokens": 8192.0,
+    "embed_dim": 768,
+    "license": "apache-2.0",
+    "open_weights": true,
+    "public_training_code": "https://github.com/nomic-ai/contrastors/blob/5f7b461e5a13b5636692d1c9f1141b27232fe966/src/contrastors/configs/train/contrastive_finetune.yaml",
+    "public_training_data": null,
+    "framework": [
+        "Sentence Transformers",
+        "PyTorch",
+        "ONNX",
+        "safetensors",
+        "Transformers"
+    ],
+    "reference": "https://huggingface.co/nomic-ai/nomic-embed-text-v1",
+    "similarity_fn_name": "cosine",
+    "use_instructions": true,
+    "training_datasets": [
+        "NQ-NL",
+        "HotPotQAHardNegatives",
+        "Quora-NL",
+        "AmazonPolarityClassification",
+        "NanoNQRetrieval",
+        "NQHardNegatives",
+        "NQ",
+        "HotPotQA-PL",
+        "RedditClustering",
+        "StackExchangeClustering.v2",
+        "FEVERHardNegatives",
+        "mMARCO-NL",
+        "MSMARCO",
+        "RedditClusteringP2P.v2",
+        "COIRCodeSearchNetRetrieval",
+        "NanoMSMARCORetrieval",
+        "NanoQuoraRetrieval",
+        "QuoraRetrieval",
+        "WikipediaRerankingMultilingual",
+        "FEVER-NL",
+        "RedditClusteringP2P",
+        "StackExchangeClusteringP2P.v2",
+        "YahooAnswersTopicsClassification",
+        "CodeSearchNetCCRetrieval",
+        "HotpotQA-NL",
+        "FEVER",
+        "RedditClustering.v2",
+        "NQ-PL",
+        "MSMARCOHardNegatives",
+        "AmazonCounterfactualClassification",
+        "FQuADRetrieval",
+        "WikipediaRetrievalMultilingual",
+        "AmazonReviewsClassification",
+        "HotPotQA"
+    ],
+    "adapted_from": null,
+    "superseded_by": "nomic-ai/nomic-embed-text-v1.5",
+    "modalities": [
+        "text"
+    ],
+    "model_type": [
+        "dense"
+    ],
+    "citation": "\n@misc{nussbaum2024nomic,\n      title={Nomic Embed: Training a Reproducible Long Context Text Embedder},\n      author={Zach Nussbaum and John X. Morris and Brandon Duderstadt and Andriy Mulyar},\n      year={2024},\n      eprint={2402.01613},\n      archivePrefix={arXiv},\n      primaryClass={cs.CL}\n}\n",
+    "contacts": null,
+    "experiment_kwargs": null,
+    "output_dtypes": null,
+    "loader": "NomicWrapper",
+    "is_cross_encoder": false
+}

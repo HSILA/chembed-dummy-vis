@@ -1,7 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { baseModel, runs, type Family, type LearningRate, type Run, type TaskKey } from '@/lib/checkpointData'
+import type { BaseModel, Family, LearningRate, Run, TaskKey } from '@/lib/checkpointTypes'
 
 type MetricOption = { key: string; label: string }
 
@@ -12,6 +12,11 @@ type Series = {
   label: string
   color: string
   dash: string | undefined
+  runs: Run[]
+}
+
+type CheckpointDashboardProps = {
+  baseModel: BaseModel
   runs: Run[]
 }
 
@@ -35,7 +40,7 @@ const FAMILY_COLORS: Record<Family, string> = {
 
 const TASKS: TaskKey[] = ['ChemHotpotQARetrieval', 'ChemNQRetrieval', 'ChemRxivRetrieval']
 
-function metricOptions(): MetricOption[] {
+function metricOptions(baseModel: BaseModel): MetricOption[] {
   const sample = baseModel.tasks.ChemRxivRetrieval
   const out: MetricOption[] = []
   if ('mrr_at_10' in sample) out.push({ key: 'mrr_at_10', label: 'MRR@10' })
@@ -45,7 +50,7 @@ function metricOptions(): MetricOption[] {
   return out
 }
 
-function valueFor(run: Run | typeof baseModel, task: TaskKey, metric: string) {
+function valueFor(run: Run | BaseModel, task: TaskKey, metric: string) {
   const taskMetrics = run.tasks[task] as Record<string, unknown>
   const value = taskMetrics[metric]
   return typeof value === 'number' ? value : 0
@@ -55,7 +60,7 @@ function formatMetric(value: number) {
   return value.toFixed(3)
 }
 
-function buildSeries(): Series[] {
+function buildSeries(runs: Run[]): Series[] {
   const grouped = new Map<string, Series>()
   for (const run of runs) {
     const key = `${run.family}-${run.lr}`
@@ -104,7 +109,7 @@ function KpiCard({ label, value, note }: { label: string; value: string; note?: 
   )
 }
 
-function ScatterTradeoff({ series, metric, visible }: { series: Series[]; metric: string; visible: Set<string> }) {
+function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: BaseModel; series: Series[]; metric: string; visible: Set<string> }) {
   const margin = { top: 20, right: 24, bottom: 48, left: 56 }
   const width = 760
   const height = 420
@@ -211,7 +216,7 @@ function ScatterTradeoff({ series, metric, visible }: { series: Series[]; metric
   )
 }
 
-function TaskLineChart({ task, metric, series, visible }: { task: TaskKey; metric: string; series: Series[]; visible: Set<string> }) {
+function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel: BaseModel; task: TaskKey; metric: string; series: Series[]; visible: Set<string> }) {
   const margin = { top: 18, right: 18, bottom: 32, left: 42 }
   const width = 420
   const height = 280
@@ -280,11 +285,11 @@ function TaskLineChart({ task, metric, series, visible }: { task: TaskKey; metri
   )
 }
 
-export default function CheckpointDashboard() {
-  const metrics = useMemo(() => metricOptions(), [])
+export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashboardProps) {
+  const metrics = useMemo(() => metricOptions(baseModel), [baseModel])
   const [metric, setMetric] = useState(metrics[0]?.key ?? 'mrr_at_10')
-  const [selected, setSelected] = useState<Set<string>>(new Set(buildSeries().map((s) => s.key)))
-  const series = useMemo(() => buildSeries(), [])
+  const [selected, setSelected] = useState<Set<string>>(() => new Set(buildSeries(runs).map((s) => s.key)))
+  const series = useMemo(() => buildSeries(runs), [runs])
 
   const chemrxivBest = useMemo(() => {
     const ordered = runs
@@ -373,10 +378,10 @@ export default function CheckpointDashboard() {
         </div>
 
         <div className="space-y-6">
-          <ScatterTradeoff series={series} metric={metric} visible={selected} />
+          <ScatterTradeoff baseModel={baseModel} series={series} metric={metric} visible={selected} />
           <div className="grid gap-6 xl:grid-cols-3">
             {TASKS.map((task) => (
-              <TaskLineChart key={task} task={task} metric={metric} series={series} visible={selected} />
+              <TaskLineChart key={task} baseModel={baseModel} task={task} metric={metric} series={series} visible={selected} />
             ))}
           </div>
         </div>
