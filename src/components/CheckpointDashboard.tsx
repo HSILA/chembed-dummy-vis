@@ -20,6 +20,12 @@ type CheckpointDashboardProps = {
   runs: Run[]
 }
 
+type ChartTooltip = {
+  anchorX: number
+  anchorY: number
+  lines: string[]
+}
+
 const TASK_LABELS: Record<TaskKey, string> = {
   ChemHotpotQARetrieval: 'ChemHotpotQA',
   ChemNQRetrieval: 'ChemNQ',
@@ -119,12 +125,41 @@ function SeriesSwatch({ color, dash, dot, showLine = true }: { color: string; da
   )
 }
 
+function SvgTooltip({ tooltip, width, height }: { tooltip: ChartTooltip | null; width: number; height: number }) {
+  if (!tooltip) return null
+
+  const paddingX = 10
+  const paddingY = 8
+  const lineHeight = 16
+  const longestLine = tooltip.lines.reduce((max, line) => Math.max(max, line.length), 0)
+  const boxWidth = Math.max(150, Math.min(260, longestLine * 6.5 + paddingX * 2))
+  const boxHeight = paddingY * 2 + tooltip.lines.length * lineHeight
+  const preferredX = tooltip.anchorX + 12
+  const preferredY = tooltip.anchorY - boxHeight - 12
+  const x = Math.max(8, Math.min(width - boxWidth - 8, preferredX))
+  const y = preferredY < 8 ? Math.min(height - boxHeight - 8, tooltip.anchorY + 12) : preferredY
+
+  return (
+    <g pointerEvents="none">
+      <rect x={x} y={y} width={boxWidth} height={boxHeight} rx={10} fill="rgba(10, 10, 10, 0.94)" stroke="#52525b" strokeWidth="1" />
+      <text x={x + paddingX} y={y + paddingY + 12} className="fill-neutral-100 text-[12px]">
+        {tooltip.lines.map((line, index) => (
+          <tspan key={`${line}-${index}`} x={x + paddingX} dy={index === 0 ? 0 : lineHeight}>
+            {line}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  )
+}
+
 function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: BaseModel; series: Series[]; metric: string; visible: Set<string> }) {
   const margin = { top: 20, right: 24, bottom: 48, left: 56 }
   const width = 760
   const height = 420
   const plotW = width - margin.left - margin.right
   const plotH = height - margin.top - margin.bottom
+  const [tooltip, setTooltip] = useState<ChartTooltip | null>(null)
 
   const visibleSeries = series.filter((s) => visible.has(s.key))
   const points = visibleSeries.flatMap((s) =>
@@ -156,7 +191,7 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
           <div className="rounded-xl border border-neutral-800 bg-neutral-950/70 px-3 py-2">Up + left = ChemRxiv improved, but the general tasks got worse</div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" onMouseLeave={() => setTooltip(null)}>
         <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke="#3f3f46" />
         <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotH} stroke="#3f3f46" />
 
@@ -193,7 +228,36 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
               <path d={svgPath(pts)} fill="none" stroke={s.color} strokeWidth={2.5} strokeDasharray={s.dash} opacity={0.9} />
               {pts.map((p) => (
                 <g key={p.run.id}>
-                  <circle cx={p.x} cy={p.y} r={5} fill={s.color} stroke="#0a0a0a" strokeWidth={1.5}>
+                  <circle
+                    cx={p.x}
+                    cy={p.y}
+                    r={5}
+                    fill={s.color}
+                    stroke="#0a0a0a"
+                    strokeWidth={1.5}
+                    onMouseEnter={() =>
+                      setTooltip({
+                        anchorX: p.x,
+                        anchorY: p.y,
+                        lines: [
+                          `${s.label} · epoch ${p.run.epoch}`,
+                          `General avg: ${formatMetric((valueFor(p.run, 'ChemHotpotQARetrieval', metric) + valueFor(p.run, 'ChemNQRetrieval', metric)) / 2)}`,
+                          `ChemRxiv: ${formatMetric(valueFor(p.run, 'ChemRxivRetrieval', metric))}`,
+                        ],
+                      })
+                    }
+                    onClick={() =>
+                      setTooltip({
+                        anchorX: p.x,
+                        anchorY: p.y,
+                        lines: [
+                          `${s.label} · epoch ${p.run.epoch}`,
+                          `General avg: ${formatMetric((valueFor(p.run, 'ChemHotpotQARetrieval', metric) + valueFor(p.run, 'ChemNQRetrieval', metric)) / 2)}`,
+                          `ChemRxiv: ${formatMetric(valueFor(p.run, 'ChemRxivRetrieval', metric))}`,
+                        ],
+                      })
+                    }
+                  >
                     <title>{`${s.label}\nEpoch ${p.run.epoch}\nGeneral avg: ${(((valueFor(p.run, 'ChemHotpotQARetrieval', metric) + valueFor(p.run, 'ChemNQRetrieval', metric)) / 2)).toFixed(3)}\nChemRxiv: ${valueFor(p.run, 'ChemRxivRetrieval', metric).toFixed(3)}`}</title>
                   </circle>
                   <text x={p.x + 7} y={p.y - 7} className="fill-neutral-400 text-[10px]">{p.run.epoch}</text>
@@ -211,6 +275,20 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
             fill={BASE_COLOR}
             stroke="#0a0a0a"
             strokeWidth={2}
+            onMouseEnter={() =>
+              setTooltip({
+                anchorX: scale(basePoint.x, xMin, xMax, margin.left, margin.left + plotW),
+                anchorY: scale(basePoint.y, yMin, yMax, margin.top + plotH, margin.top),
+                lines: ['Base model', `General avg: ${formatMetric(basePoint.x)}`, `ChemRxiv: ${formatMetric(basePoint.y)}`],
+              })
+            }
+            onClick={() =>
+              setTooltip({
+                anchorX: scale(basePoint.x, xMin, xMax, margin.left, margin.left + plotW),
+                anchorY: scale(basePoint.y, yMin, yMax, margin.top + plotH, margin.top),
+                lines: ['Base model', `General avg: ${formatMetric(basePoint.x)}`, `ChemRxiv: ${formatMetric(basePoint.y)}`],
+              })
+            }
           >
             <title>{`Base model\nGeneral avg: ${basePoint.x.toFixed(3)}\nChemRxiv: ${basePoint.y.toFixed(3)}`}</title>
           </circle>
@@ -229,6 +307,7 @@ function ScatterTradeoff({ baseModel, series, metric, visible }: { baseModel: Ba
         <text transform={`translate(14 ${margin.top + plotH / 2}) rotate(-90)`} textAnchor="middle" className="fill-neutral-400 text-xs">
           {TASK_LABELS.ChemRxivRetrieval}
         </text>
+        <SvgTooltip tooltip={tooltip} width={width} height={height} />
       </svg>
     </div>
   )
@@ -240,6 +319,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
   const height = 280
   const plotW = width - margin.left - margin.right
   const plotH = height - margin.top - margin.bottom
+  const [tooltip, setTooltip] = useState<ChartTooltip | null>(null)
   const visibleSeries = series.filter((s) => visible.has(s.key))
   const values = visibleSeries.flatMap((s) => s.runs.map((run) => valueFor(run, task, metric)))
   const base = valueFor(baseModel, task, metric)
@@ -250,7 +330,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
       <div className="mb-3">
         <h3 className="text-base font-semibold text-white">{TASK_LABELS[task]}</h3>
       </div>
-      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible">
+      <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" onMouseLeave={() => setTooltip(null)}>
         <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke="#3f3f46" />
         <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotH} stroke="#3f3f46" />
         {[0, 1, 2, 3, 4, 5].map((epoch) => {
@@ -285,7 +365,29 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
             <g key={s.key}>
               <path d={svgPath(pts)} fill="none" stroke={s.color} strokeWidth={2.5} strokeDasharray={s.dash} />
               {pts.map((p) => (
-                <circle key={p.run.id} cx={p.x} cy={p.y} r={4.5} fill={s.color} stroke="#0a0a0a" strokeWidth={1.5}>
+                <circle
+                  key={p.run.id}
+                  cx={p.x}
+                  cy={p.y}
+                  r={4.5}
+                  fill={s.color}
+                  stroke="#0a0a0a"
+                  strokeWidth={1.5}
+                  onMouseEnter={() =>
+                    setTooltip({
+                      anchorX: p.x,
+                      anchorY: p.y,
+                      lines: [`${s.label} · epoch ${p.run.epoch}`, `${TASK_LABELS[task]}: ${formatMetric(valueFor(p.run, task, metric))}`],
+                    })
+                  }
+                  onClick={() =>
+                    setTooltip({
+                      anchorX: p.x,
+                      anchorY: p.y,
+                      lines: [`${s.label} · epoch ${p.run.epoch}`, `${TASK_LABELS[task]}: ${formatMetric(valueFor(p.run, task, metric))}`],
+                    })
+                  }
+                >
                   <title>{`${s.label}\nEpoch ${p.run.epoch}\n${TASK_LABELS[task]}: ${valueFor(p.run, task, metric).toFixed(3)}`}</title>
                 </circle>
               ))}
@@ -294,10 +396,32 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
         })}
 
         <g>
-          <circle cx={scale(0, 0, 5, margin.left, margin.left + plotW)} cy={scale(base, yMin, yMax, margin.top + plotH, margin.top)} r={6} fill={BASE_COLOR} stroke="#0a0a0a" strokeWidth={2}>
+          <circle
+            cx={scale(0, 0, 5, margin.left, margin.left + plotW)}
+            cy={scale(base, yMin, yMax, margin.top + plotH, margin.top)}
+            r={6}
+            fill={BASE_COLOR}
+            stroke="#0a0a0a"
+            strokeWidth={2}
+            onMouseEnter={() =>
+              setTooltip({
+                anchorX: scale(0, 0, 5, margin.left, margin.left + plotW),
+                anchorY: scale(base, yMin, yMax, margin.top + plotH, margin.top),
+                lines: ['Base model', `${TASK_LABELS[task]}: ${formatMetric(base)}`],
+              })
+            }
+            onClick={() =>
+              setTooltip({
+                anchorX: scale(0, 0, 5, margin.left, margin.left + plotW),
+                anchorY: scale(base, yMin, yMax, margin.top + plotH, margin.top),
+                lines: ['Base model', `${TASK_LABELS[task]}: ${formatMetric(base)}`],
+              })
+            }
+          >
             <title>{`Base model\n${TASK_LABELS[task]}: ${base.toFixed(3)}`}</title>
           </circle>
         </g>
+        <SvgTooltip tooltip={tooltip} width={width} height={height} />
       </svg>
     </div>
   )
