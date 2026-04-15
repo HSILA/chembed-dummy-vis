@@ -542,12 +542,12 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
         </div>
 
         <div className="space-y-6">
-          <ScatterTradeoff baseModel={baseModel} series={series} metric={metric} visible={selected} />
           <div className="grid gap-6 xl:grid-cols-3">
             {TASKS.map((task) => (
               <TaskLineChart key={task} baseModel={baseModel} task={task} metric={metric} series={series} visible={selected} />
             ))}
           </div>
+          <ScatterTradeoff baseModel={baseModel} series={series} metric={metric} visible={selected} />
         </div>
       </div>
     </div>
