@@ -36,12 +36,14 @@ const FAMILY_LABELS: Record<Family, string> = {
   vanilla: 'Vanilla',
   full: 'Full',
   plug: 'Plug',
+  prog1: 'Prog1',
 }
 
 const FAMILY_COLORS: Record<Family, string> = {
   vanilla: '#60a5fa',
   full: '#f59e0b',
   plug: '#34d399',
+  prog1: '#c084fc',
 }
 
 const BASE_COLOR = '#ef4444'
@@ -88,6 +90,10 @@ function buildSeries(runs: Run[]): Series[] {
     ...series,
     runs: [...series.runs].sort((a, b) => a.epoch - b.epoch),
   }))
+}
+
+function maxEpochForSeries(series: Series[]) {
+  return Math.max(1, ...series.flatMap((entry) => entry.runs.map((run) => run.epoch)))
 }
 
 function svgPath(points: Array<{ x: number; y: number }>) {
@@ -323,6 +329,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
   const visibleSeries = series.filter((s) => visible.has(s.key))
   const values = visibleSeries.flatMap((s) => s.runs.map((run) => valueFor(run, task, metric)))
   const base = valueFor(baseModel, task, metric)
+  const maxEpoch = maxEpochForSeries(series)
   const [yMin, yMax] = extent([...values, base])
 
   return (
@@ -333,8 +340,8 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
       <svg viewBox={`0 0 ${width} ${height}`} className="w-full overflow-visible" onMouseLeave={() => setTooltip(null)}>
         <line x1={margin.left} y1={margin.top + plotH} x2={margin.left + plotW} y2={margin.top + plotH} stroke="#3f3f46" />
         <line x1={margin.left} y1={margin.top} x2={margin.left} y2={margin.top + plotH} stroke="#3f3f46" />
-        {[0, 1, 2, 3, 4, 5].map((epoch) => {
-          const x = scale(epoch, 0, 5, margin.left, margin.left + plotW)
+        {Array.from({ length: maxEpoch + 1 }, (_, epoch) => epoch).map((epoch) => {
+          const x = scale(epoch, 0, maxEpoch, margin.left, margin.left + plotW)
           return (
             <g key={epoch}>
               <line x1={x} y1={margin.top} x2={x} y2={margin.top + plotH} stroke="#262626" strokeDasharray="3 6" />
@@ -358,7 +365,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
         {visibleSeries.map((s) => {
           const pts = s.runs.map((run) => ({
             run,
-            x: scale(run.epoch, 0, 5, margin.left, margin.left + plotW),
+            x: scale(run.epoch, 0, maxEpoch, margin.left, margin.left + plotW),
             y: scale(valueFor(run, task, metric), yMin, yMax, margin.top + plotH, margin.top),
           }))
           return (
@@ -397,7 +404,7 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
 
         <g>
           <circle
-            cx={scale(0, 0, 5, margin.left, margin.left + plotW)}
+            cx={scale(0, 0, maxEpoch, margin.left, margin.left + plotW)}
             cy={scale(base, yMin, yMax, margin.top + plotH, margin.top)}
             r={6}
             fill={BASE_COLOR}
@@ -405,14 +412,14 @@ function TaskLineChart({ baseModel, task, metric, series, visible }: { baseModel
             strokeWidth={2}
             onMouseEnter={() =>
               setTooltip({
-                anchorX: scale(0, 0, 5, margin.left, margin.left + plotW),
+                anchorX: scale(0, 0, maxEpoch, margin.left, margin.left + plotW),
                 anchorY: scale(base, yMin, yMax, margin.top + plotH, margin.top),
                 lines: ['Base model', `${TASK_LABELS[task]}: ${formatMetric(base)}`],
               })
             }
             onClick={() =>
               setTooltip({
-                anchorX: scale(0, 0, 5, margin.left, margin.left + plotW),
+                anchorX: scale(0, 0, maxEpoch, margin.left, margin.left + plotW),
                 anchorY: scale(base, yMin, yMax, margin.top + plotH, margin.top),
                 lines: ['Base model', `${TASK_LABELS[task]}: ${formatMetric(base)}`],
               })
@@ -461,7 +468,7 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
             <p className="text-sm uppercase tracking-[0.24em] text-neutral-500">ChEmbed checkpoint explorer</p>
             <h1 className="mt-2 text-4xl font-semibold tracking-tight text-white">Learning rate × epoch trajectories</h1>
             <p className="mt-3 max-w-3xl text-sm leading-6 text-neutral-400">
-              Interactive browser-based view of the first five epochs for vanilla, full, and plug. Every chart shows the base model as a single dot; checkpoint series are connected by lines so the trajectory is visible immediately.
+              Interactive browser-based view of the first ten epochs for vanilla, full, plug, and prog1. Every chart shows the base model as a single dot; checkpoint series are connected by lines so the trajectory is visible immediately.
             </p>
           </div>
         </header>
@@ -498,7 +505,7 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
                   <SeriesSwatch color="#d4d4d8" dash="10 6" />
                   <span>Dashed line = lr 1e-5</span>
                 </div>
-                <div className="text-xs text-neutral-500">Color still shows model family: blue = vanilla, amber = full, green = plug.</div>
+                <div className="text-xs text-neutral-500">Color still shows model family: blue = vanilla, amber = full, green = plug, purple = prog1.</div>
               </div>
             </div>
 

@@ -5,7 +5,7 @@ import path from 'node:path'
 import type { BaseModel, CheckpointDataset, Family, LearningRate, MetricMap, MetricValue, Run, TaskKey } from '@/lib/checkpointTypes'
 
 const TASKS: TaskKey[] = ['ChemHotpotQARetrieval', 'ChemNQRetrieval', 'ChemRxivRetrieval']
-const EPOCHS = [1, 2, 3, 4, 5] as const
+const EPOCHS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const
 const RESULTS_ROOT = path.join(process.cwd(), 'results', 'checkpoint-data')
 
 const SERIES: Array<{ family: Family; lr: LearningRate }> = [
@@ -15,6 +15,7 @@ const SERIES: Array<{ family: Family; lr: LearningRate }> = [
   { family: 'full', lr: '1e-6' },
   { family: 'plug', lr: '1e-5' },
   { family: 'plug', lr: '1e-6' },
+  { family: 'prog1', lr: '1e-5' },
 ]
 
 type TaskPayload = {
