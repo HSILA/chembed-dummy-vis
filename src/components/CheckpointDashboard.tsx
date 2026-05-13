@@ -45,7 +45,7 @@ const FAMILY_COLORS: Record<Family, string> = {
   full: '#f59e0b',
   plug: '#34d399',
   prog1: '#c084fc',
-  prog2: '#2dd4bf',
+  prog2: '#f472b6',
 }
 
 const BASE_COLOR = '#ef4444'
