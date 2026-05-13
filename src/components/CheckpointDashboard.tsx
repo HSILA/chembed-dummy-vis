@@ -513,31 +513,37 @@ export default function CheckpointDashboard({ baseModel, runs }: CheckpointDashb
 
             <div className="mt-6">
               <div className="text-xs uppercase tracking-[0.14em] text-neutral-400">Series</div>
-              <div className="mt-3 space-y-2">
-                {series.map((s) => {
-                  const active = selected.has(s.key)
-                  return (
-                    <button
-                      key={s.key}
-                      onClick={() => {
-                        const next = new Set(selected)
-                        if (active) next.delete(s.key)
-                        else next.add(s.key)
-                        setSelected(next)
-                      }}
-                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm ${active ? 'border-neutral-600 bg-neutral-950 text-white' : 'border-neutral-800 bg-neutral-950/40 text-neutral-500'}`}
-                    >
-                      <span className="flex items-center gap-2">
-                        <SeriesSwatch color={s.color} dash={s.dash} />
-                        <span className="flex flex-col items-start">
-                          <span>{s.label}</span>
-                          <span className="text-xs text-neutral-500">{s.dash ? 'dashed' : 'solid'} line</span>
-                        </span>
-                      </span>
-                      <span className="text-xs">{active ? 'on' : 'off'}</span>
-                    </button>
-                  )
-                })}
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                {(['1e-5', '1e-6'] as const).map((lr) => (
+                  <div key={lr}>
+                    <div className="mb-1.5 text-[11px] font-medium text-neutral-500">{lr}</div>
+                    <div className="space-y-2">
+                      {series.filter((s) => s.lr === lr).map((s) => {
+                        const active = selected.has(s.key)
+                        return (
+                          <button
+                            key={s.key}
+                            onClick={() => {
+                              const next = new Set(selected)
+                              if (active) next.delete(s.key)
+                              else next.add(s.key)
+                              setSelected(next)
+                            }}
+                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm ${active ? 'border-neutral-600 bg-neutral-950 text-white' : 'border-neutral-800 bg-neutral-950/40 text-neutral-500'}`}
+                          >
+                            <span className="flex items-center gap-2">
+                              <SeriesSwatch color={s.color} dash={s.dash} />
+                              <span className="flex flex-col items-start">
+                                <span className="text-xs">{FAMILY_LABELS[s.family]}</span>
+                              </span>
+                            </span>
+                            <span className="text-[10px]">{active ? 'on' : 'off'}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </aside>
