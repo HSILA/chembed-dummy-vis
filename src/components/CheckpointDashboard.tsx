@@ -37,6 +37,7 @@ const FAMILY_LABELS: Record<Family, string> = {
   full: 'Full',
   plug: 'Plug',
   prog1: 'Prog1',
+  prog2: 'Prog2',
 }
 
 const FAMILY_COLORS: Record<Family, string> = {
@@ -44,6 +45,7 @@ const FAMILY_COLORS: Record<Family, string> = {
   full: '#f59e0b',
   plug: '#34d399',
   prog1: '#c084fc',
+  prog2: '#fb923c',
 }
 
 const BASE_COLOR = '#ef4444'

@@ -16,6 +16,9 @@ const SERIES: Array<{ family: Family; lr: LearningRate }> = [
   { family: 'plug', lr: '1e-5' },
   { family: 'plug', lr: '1e-6' },
   { family: 'prog1', lr: '1e-5' },
+  { family: 'prog1', lr: '1e-6' },
+  { family: 'prog2', lr: '1e-5' },
+  { family: 'prog2', lr: '1e-6' },
 ]
 
 type TaskPayload = {

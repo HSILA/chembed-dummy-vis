@@ -1,5 +1,5 @@
 export type TaskKey = 'ChemHotpotQARetrieval' | 'ChemNQRetrieval' | 'ChemRxivRetrieval'
-export type Family = 'vanilla' | 'full' | 'plug' | 'prog1'
+export type Family = 'vanilla' | 'full' | 'plug' | 'prog1' | 'prog2'
 export type LearningRate = '1e-5' | '1e-6'
 
 export type MetricValue = number | string | string[] | null
